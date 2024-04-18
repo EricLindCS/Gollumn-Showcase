@@ -12,7 +12,6 @@
 #include "Autonomous Functionality/SpeakerFunctionality.h"
 #include "Autonomous Functionality/AmpFunctionality.h"
 #include "Autonomous Functionality/TrapFunctionality.h"
-#include "Autonomous Functionality/AutonomousRoutines.h"
 #include "Intake.h"
 #include "FlyWheel.h"
 #include "Elevator.h"
@@ -25,7 +24,6 @@
 VisionSwerve swerveDrive{};
 RumbleXboxController xboxController{0};
 RumbleXboxController xboxController2{1};
-XboxController xboxController3{2};
 Intake overbumper{};
 FlywheelSystem flywheel{};
 Elevator ampmech{};
@@ -39,14 +37,10 @@ AutonomousShootingController flywheelController{&swerveAutoController, &flywheel
 AutonomousAmpingController autoAmpController{&swerveAutoController, &notecontroller};
 AutonomousTrapController autoTrapController{&swerveAutoController, &notecontroller, &ampmech, &hang, &overbumper};
 
-AutonomousController autoController{&swerveDrive, &overbumper, &flywheel, &ampmech, &swerveAutoController, &notecontroller, &flywheelController, &autoAmpController};
-
 Elevator::ElevatorSetting elevSetHeight = Elevator::LOW;
 Intake::WristSetting wristSetPoint = Intake::HIGH;
 
 AllianceColor allianceColor = AllianceColor::BLUE;
-
-wpi::log::StringLogEntry shotPositionLog;
 
 enum DRIVER_MODE {BASIC, AUTO_AIM_STATIONARY, SHOOT_ON_THE_MOVE, AUTO_AMP, AUTO_INTAKE, CLIMBING_TRAP};
 DRIVER_MODE currentDriverMode = DRIVER_MODE::BASIC;
@@ -64,43 +58,7 @@ bool fixingShooter = false;
 
 void Robot::RobotInit()
 {
-  DataLogManager::Start();
-  wpi::log::DataLog& log = frc::DataLogManager::GetLog();
-  shotPositionLog = wpi::log::StringLogEntry(log, "/logging/shotPositions");
 
-  m_chooser.SetDefaultOption(kAutoBCSI2S, kAutoBCSI2S);
-  m_chooser.AddOption(kAutoBLSI3S, kAutoBLSI3S);
-  m_chooser.AddOption(kAutoBRSI1S, kAutoBRSI1S);
-  m_chooser.AddOption(kAutoRCSI10S, kAutoRCSI10S);
-  m_chooser.AddOption(kAutoRLSI9S, kAutoRLSI9S);
-  m_chooser.AddOption(kAutoRRSI11S, kAutoRRSI11S);
-  m_chooser.AddOption(kAutoBRSlow4CloseNotes, kAutoBRSlow4CloseNotes);
-  m_chooser.AddOption(kAutoBLSI3SI8S, kAutoBLSI3SI8S);
-  m_chooser.AddOption(kAutoBLSS3S8TEST, kAutoBLSS3S8TEST);
-  m_chooser.AddOption(kAutoBR4CloseNotes, kAutoBR4CloseNotes);
-  m_chooser.AddOption(kAutoBR4CloseNotesAnd8, kAutoBR4CloseNotesAnd8);
-  m_chooser.AddOption(kAutoRL4CloseNotesAnd8, kAutoRL4CloseNotesAnd8);
-  m_chooser.AddOption(kAutoBC4CloseNotesAnd8, kAutoBC4CloseNotesAnd8);
-  m_chooser.AddOption(kAutoRC4CloseNotesAnd8, kAutoRC4CloseNotesAnd8);
-  m_chooser.AddOption(kAutoBC267, kAutoBC267);
-  m_chooser.AddOption(kAutoRC1067, kAutoRC1067);
-  m_chooser.AddOption(kAutoBR145, kAutoBR145);
-  m_chooser.AddOption(kAutoRL945, kAutoRL945);
-  m_chooser.AddOption(kAutoBL3267, kAutoBL3267);
-  m_chooser.AddOption(kAutoRR111067, kAutoRR111067);
-  m_chooser.AddOption(kAutoBR146, kAutoBR146);
-  m_chooser.AddOption(kAutoRL946, kAutoRL946);
-  m_chooser.AddOption(kAutoBR45, kAutoBR45);
-  m_chooser.AddOption(kAutoRL45, kAutoRL45);
-  m_chooser.AddOption(kAutoBL387, kAutoBL387);
-  m_chooser.AddOption(kAutoRR1187, kAutoRR1187);
-  m_chooser.AddOption(kAutoRFL45, kAutoRFL45);
-  m_chooser.AddOption(kAutoBFR45, kAutoBFR45);
-  m_chooser.AddOption(kAutoRFR87, kAutoRFR87);
-  m_chooser.AddOption(kAutoBFL87, kAutoBFL87);
-
-  frc::SmartDashboard::PutData("Auto Modes", &m_chooser);
-  
   SmartDashboard::PutNumber("Flywheel Setpoint", 0);
   SmartDashboard::PutNumber("Angler Setpoint", M_PI / 2);
 
@@ -132,7 +90,6 @@ void Robot::RobotPeriodic() {
   SmartDashboard::PutBoolean("In Match", DriverStation::GetMatchType() != DriverStation::MatchType::kNone);
   SmartDashboard::PutBoolean("Is Blue Alliance", allianceColor == AllianceColor::BLUE);
 
-  flywheelController.anglerTrim = SmartDashboard::GetNumber("Angler Trim", 0.0);
 }
 
 /**
@@ -157,238 +114,6 @@ void Robot::AutonomousInit()
 
   ampmech.ResetElevatorEncoder();  
 
-  if (m_autoSelected == kAutoBCSI2S)
-  {
-    autoController.SetupBasicShootIntakeShoot(Pose2d(1.39_m, 5.51_m, Rotation2d(180_deg)), "BCTo2"); 
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoBLSI3S)
-  {
-    autoController.SetupBasicShootIntakeShoot(Pose2d(0.76_m, 6.68_m, Rotation2d(-120_deg)), "BLTo3"); 
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoBRSI1S)
-  {
-    autoController.SetupBasicShootIntakeShoot(Pose2d(0.74_m, 4.35_m, Rotation2d(120_deg)), "BRTo1"); 
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoRLSI9S)
-  {
-    autoController.SetupBasicShootIntakeShoot(Pose2d(15.81_m, 4.43_m, Rotation2d(60_deg)), "RLTo9"); 
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoRCSI10S)
-  {
-    autoController.SetupBasicShootIntakeShoot(Pose2d(15.22_m, 5.57_m, Rotation2d(0_deg)), "RCTo10"); 
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoRRSI11S)
-  {
-    autoController.SetupBasicShootIntakeShoot(Pose2d(15.79_m, 6.7_m, Rotation2d(150_deg)), "RRTo11"); 
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoBLSI3SI8S)
-  {
-    autoController.SetupBlueLeftShootIntake3ShootIntake8Shoot();
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoBLSS3S8TEST)
-  {
-    autoController.SetupBlueLeftShootIntake3ShootIntake8ShootTESTING();    
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoBRSlow4CloseNotes)
-  {
-    autoController.SetupSlowBlueRightShootIntake1ShootIntake2ShootIntake3();
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoBR4CloseNotes)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(1.06_m, 4.35_m, Rotation2d(138.81_deg)), "BRTo1To2To3", 100_m);
-    allianceColor = AllianceColor::BLUE;  
-  }
-  else if (m_autoSelected == kAutoBR4CloseNotesAnd8)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(1.06_m, 4.35_m, Rotation2d(138.81_deg)), "BRTo1To2To3To8", 4.25_m);
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoRL4CloseNotesAnd8)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(15.48_m, 4.4_m, Rotation2d(34.93_deg)), "RLTo9To10To11To8", 4.25_m);
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoBC4CloseNotesAnd8)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(1.46_m, 5.49_m, Rotation2d(180_deg)), "BCTo1To2To3To8", 4.25_m);
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoRC4CloseNotesAnd8)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(15.14_m, 5.53_m, Rotation2d(0_deg)), "RCTo9To10To11To8", 4.25_m);
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoBC267)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(1.38_m, 5.51_m, Rotation2d(180_deg)), "BCTo2To6To7", 4.25_m);
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoRC1067)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(15.19_m, 5.59_m, Rotation2d(0.81_deg)), "RCTo10To6To7", 4.25_m);
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoBR145)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(1.22_m, 4.47_m, Rotation2d(-98.13_deg)), "BRTo1To4To5", 4.25_m);
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoRL945)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(15.34_m, 4.38_m, Rotation2d(47.73_deg)), "RLTo9To4To5", 4.25_m);
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoBL3267)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(1.20_m, 6.54_m, Rotation2d(-145.78_deg)), "BLTo3To2To6To7", 4.25_m);
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoRR111067)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(15.34_m, 6.58_m, Rotation2d(83.66_deg)), "RRTo11To10To6To7", 4.25_m);
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoBR146)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(1.29_m, 4.47_m, Rotation2d(150.75_deg)), "BRTo1To4To6", 4.25_m);
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoRL946)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(15.37_m, 4.59_m, Rotation2d(27.9_deg)), "RLTo9To4To6", 4.25_m);
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoBR45)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(1.1_m, 4.37_m, Rotation2d(137.29_deg)), "BRTo4To5", 4.25_m);
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoRL45)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(15.35_m, 4.46_m, Rotation2d(37.57_deg)), "RLTo4To5", 4.25_m);
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoBL387)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(1.25_m, 6.49_m, Rotation2d(-144.64_deg)), "BLTo3To8To7", 4.25_m);
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoRR1187)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(15.35_m, 6.64_m, Rotation2d(-34.59_deg)), "RRTo11To8To7", 4.25_m);
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoRFL45)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(15.14_m, 1.7_m, Rotation2d(-63.12_deg)), "RFLDropTo4To5", 3.5_m);
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoBFR45)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(1.4_m, 1.7_m, Rotation2d(-118.19_deg)), "BFRDropTo4To5", 3.5_m);
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoRFL54)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(15.14_m, 1.7_m, Rotation2d(-63.12_deg)), "RFLDropTo5To4", 3.5_m);
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoBFR54)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(1.4_m, 1.7_m, Rotation2d(-118.19_deg)), "BFRDropTo5To4", 3.5_m);
-    allianceColor = AllianceColor::BLUE;
-  }
-  else if (m_autoSelected == kAutoRFR87)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(15.45_m, 7.21_m, Rotation2d(-34.59_deg)), "RFRDropTo8To7", 4.25_m);
-    allianceColor = AllianceColor::RED;
-  }
-  else if (m_autoSelected == kAutoBFL87)
-  {
-    autoController.SetupFollowTrajectoryAndShoot(Pose2d(1.29_m, 7.2_m, Rotation2d(-140.3_deg)), "BFLDropTo8To7", 4.25_m);
-    allianceColor = AllianceColor::BLUE;
-  }
-}
-
-void Robot::AutonomousPeriodic()
-{
-  /* Updates */
-  swerveDrive.Update();
-
-   /* Autos */
-  if (m_autoSelected == kAutoBCSI2S)
-    autoController.BasicShootIntakeShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoBLSI3S)
-    autoController.BasicShootIntakeShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoBRSI1S)
-    autoController.BasicShootIntakeShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoRCSI10S)
-    autoController.BasicShootIntakeShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoRLSI9S)
-    autoController.BasicShootIntakeShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoRRSI11S)
-    autoController.BasicShootIntakeShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoBLSI3SI8S)
-    autoController.BlueLeftShootIntake3ShootIntake8Shoot();
-  else if (m_autoSelected == kAutoBLSS3S8TEST)
-    autoController.BlueLeftShootIntake3ShootIntake8ShootTESTING(); 
-  else if (m_autoSelected == kAutoBRSlow4CloseNotes)
-    autoController.SlowBlueRightShootIntake1ShootIntake2ShootIntake3();
-  else if (m_autoSelected == kAutoBR4CloseNotes)
-    autoController.FollowTrajectoryAndShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoBR4CloseNotesAnd8)
-    autoController.FollowTrajectoryAndShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoRL4CloseNotesAnd8)
-    autoController.FollowTrajectoryAndShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoBC4CloseNotesAnd8)
-    autoController.FollowTrajectoryAndShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoRC4CloseNotesAnd8)
-    autoController.FollowTrajectoryAndShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoBC267)
-      autoController.FollowTrajectoryAndShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoRC1067)
-      autoController.FollowTrajectoryAndShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoBR145)
-      autoController.FollowTrajectoryAndShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoRL945)
-      autoController.FollowTrajectoryAndShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoBL3267)
-      autoController.FollowTrajectoryAndShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoRR111067)
-      autoController.FollowTrajectoryAndShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoBR146)
-      autoController.FollowTrajectoryAndShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoRL946)
-      autoController.FollowTrajectoryAndShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoBR45)
-      autoController.FollowTrajectoryAndShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoRL45)
-      autoController.FollowTrajectoryAndShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoBL387)
-      autoController.FollowTrajectoryAndShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoRR1187)
-      autoController.FollowTrajectoryAndShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoRFL45)
-      autoController.DropLongShotFollowTrajectoryAndShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoBFR45)
-      autoController.DropLongShotFollowTrajectoryAndShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoRFL54)
-      autoController.DropLongShotFollowTrajectoryAndShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoBFR54)
-      autoController.DropLongShotFollowTrajectoryAndShoot(AllianceColor::BLUE);
-  else if (m_autoSelected == kAutoRFR87)
-      autoController.DropLongShotFollowTrajectoryAndShoot(AllianceColor::RED);
-  else if (m_autoSelected == kAutoBFL87)
-      autoController.DropLongShotFollowTrajectoryAndShoot(AllianceColor::BLUE);
 }
 
 void Robot::TeleopInit()
@@ -710,7 +435,6 @@ void Robot::TeleopPeriodic()
 
       if(doneShooting){
         Translation2d diff = flywheelController.GetDiffDebug();
-        shotPositionLog.Append("X Diff: " + to_string(diff.X().value()) + ", Y Diff: " + to_string(diff.Y().value()));
         lights.SetStrobeGreen();
         xboxController.ShotNoteRumble();
       }
@@ -780,7 +504,6 @@ void Robot::TeleopPeriodic()
       if (!begunShooting && xboxController2.GetRightTriggerAxis() > TRIGGER_ACTIVATION_POINT)
       {
         Translation2d diff = flywheelController.GetDiffDebug();
-        shotPositionLog.Append("X Diff: " + to_string(diff.X().value()) + ", Y Diff: " + to_string(diff.Y().value()));
         begunShooting = true;
         overbumper.BeginShootNote();
         shotTimer.Restart();

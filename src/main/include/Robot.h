@@ -22,8 +22,6 @@
 #include <frc/PowerDistribution.h>
 
 //Telemetry 
-#include <frc/DataLogManager.h>
-#include <wpi/DataLog.h>
 #include <frc/smartdashboard/SendableChooser.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 
@@ -54,7 +52,6 @@
 #include <frc/DigitalInput.h>
 #include <frc/DutyCycleEncoder.h>
 #include <rev/AbsoluteEncoder.h>
-#include <TimeOfFlight.h>
 
 //Motors & LEDs
 #include <rev/CANSparkBase.h>
@@ -71,10 +68,6 @@
 #include <frc/controller/SimpleMotorFeedforward.h>
 #include <frc/controller/ArmFeedforward.h>
 #include <frc/controller/ElevatorFeedforward.h>
-
-//Pathplanner
-#include <pathplanner/lib/path/PathPlannerPath.h>
-#include <pathplanner/lib/path/PathPlannerTrajectory.h>
 
 #include <frc/MathUtil.h>
 

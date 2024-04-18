@@ -156,7 +156,6 @@ public:
         m_field.SetRobotPose(swerveDrive->GetOdometryPose());
         teleoptab.Add("Field", m_field).WithSize(3, 2).WithPosition(3, 0).WithWidget(frc::BuiltInWidgets::kField);
         
-        /*
         teleoptab.Add("Swerve Drive", ntswervedrive_).WithSize(2,2).WithPosition(3,2);
 
         elevatorlist.Add("Alt Intake", false).WithSize(1, 1).WithPosition(6, 0).WithWidget(frc::BuiltInWidgets::kToggleButton);
@@ -164,7 +163,7 @@ public:
 
         teleoptab.Add("Flywheel System", ntflywheel_).WithSize(2, 4).WithPosition(6,0);
         elevatorlist.Add("Elevator", ntclimbelevator_).WithSize(2,4).WithPosition(3,2);
-        */
+
     }
 
     void Update(){
